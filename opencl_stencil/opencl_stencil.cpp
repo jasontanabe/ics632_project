@@ -74,11 +74,10 @@ int main(int argc, char* argv[])
 
 		cl::NDRange global(N, N);
 		cl::NDRange local(1, 1);
+		kernel.setArg(0, bufferA);
+		kernel.setArg(1, bufferB);
+		kernel.setArg(2, bufferN);
 		for (int num_iter = 0; num_iter < iters; num_iter++) {
-			kernel.setArg(0, bufferA);
-			kernel.setArg(1, bufferB);
-			kernel.setArg(2, bufferN);
-
 			queue.enqueueNDRangeKernel(kernel, cl::NullRange, global, local);
 			queue.enqueueCopyBuffer(bufferB, bufferA, 0, 0, bufferSize);
 		}
