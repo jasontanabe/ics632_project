@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#define N 10
+#define N 100
 #define ITERS 5
 
 int main(int argc, char* argv[])
@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	}
 	std::cout << std::endl;
 
-	for (int num_it = 0; num_it < iters; num_it++) {
+	for (int num_it = 0; num_it < ITERS; num_it++) {
 		for (int i = 0; i < N; i++) {
 			for (int j = 0; j < N; j++) {
 				float update = 0.0;
@@ -46,6 +46,14 @@ int main(int argc, char* argv[])
 		std::cout << std::endl;
 		A = B;
 	}
+
+  int sum = 0;
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; j++) {
+      sum += B.at(i*N+j);
+    }
+  }
+  std::cout << "sum is " << sum << std::endl;
 
 	return 0;
 }
