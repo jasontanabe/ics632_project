@@ -2,11 +2,10 @@
 #include <vector>
 #include <string>
 
-#define N 10
-#define ITERS 5
-
 int main(int argc, char* argv[])
 {
+  int N = std::stoi(argv[1]);
+  int iters = std::stoi(argv[2]);
 	std::vector<float> A(N*N), B(N*N);
 
 	for (int i = 0; i < N; i++) {
