@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, bwidth, bheight, 0, GL_RGBA, GL_FLOAT, &texData.at(0));
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, pWidth, pHeight, 0, GL_RGBA, GL_FLOAT, &texData.at(0));
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 	glEnableVertexAttribArray(positionAttrib);
 	
 	GLint texAttrib = glGetAttribLocation(shaderProgram, "texCoord");
-	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(8*sizeof(GLfloat)));
+	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid*>(8*sizeof(GLfloat)));
 	glEnableVertexAttribArray(texAttrib);
 
 	//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
