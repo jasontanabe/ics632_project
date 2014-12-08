@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#define N  500
-#define BLOCK_SIZE 5
+#define N  300
+#define BLOCK_SIZE 15
+
+struct timeval start, end;
 
 // get global offset of a given block and given index in block
 __device__ int global_offset(int block_row, int block_col, int row, int col) {
@@ -61,9 +63,13 @@ int main() {
   dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
   dim3 blocks((N+BLOCK_SIZE-1)/BLOCK_SIZE, (N+BLOCK_SIZE-1)/BLOCK_SIZE);
 
+  gettimeofday(&start, NULL);
+
   matmul<<<blocks, threads>>>(dev_a, dev_b, dev_c);
 
   cudaThreadSynchronize();
+
+  gettimeofday(&end, NULL);
 
   cudaMemcpy(c, dev_c, N*N*sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -75,6 +81,11 @@ int main() {
     }
   }
   std::cout << "sum is " << sum << std::endl;
+  printf("Seconds elapsed: %f\n",
+      (end.tv_sec*1000000.0 + end.tv_usec - start.tv_sec*1000000.0 - 
+       start.tv_usec) / 1000000.0);
+
+
   cudaFree(dev_a);
   cudaFree(dev_b);
   cudaFree(dev_c);

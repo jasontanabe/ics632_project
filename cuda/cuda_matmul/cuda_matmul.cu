@@ -6,6 +6,8 @@
 #define N  300
 #define NUM_THREADS 16
 
+struct timeval start, end;
+
 __global__ void matmul(int* a, int* b, int* c) {
   int row = blockIdx.y * blockDim.y + threadIdx.y;
   int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -41,9 +43,13 @@ int main() {
   dim3 threads(NUM_THREADS, NUM_THREADS);
   dim3 blocks((N+NUM_THREADS-1)/NUM_THREADS, (N+NUM_THREADS-1)/NUM_THREADS);
 
+  gettimeofday(&start, NULL);
+
   matmul<<<blocks, threads>>>(dev_a, dev_b, dev_c);
 
   cudaThreadSynchronize();
+
+  gettimeofday(&end, NULL);
 
   cudaMemcpy(c, dev_c, N*N*sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -55,6 +61,10 @@ int main() {
     }
   }
   std::cout << "sum is " << sum << std::endl;
+  printf("Seconds elapsed: %f\n",
+      (end.tv_sec*1000000.0 + end.tv_usec - start.tv_sec*1000000.0 - 
+       start.tv_usec) / 1000000.0);
+
   cudaFree(dev_a);
   cudaFree(dev_b);
   cudaFree(dev_c);

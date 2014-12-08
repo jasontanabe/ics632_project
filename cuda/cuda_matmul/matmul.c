@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <omp.h>
-#define N 500
+#define N 300
 
 int a[N][N];
 int b[N][N];
