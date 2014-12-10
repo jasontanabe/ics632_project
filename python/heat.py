@@ -185,20 +185,27 @@ class GLPlotWidget(QGLWidget):
         gl.glDisableClientState(gl.GL_COLOR_ARRAY)
         gl.glDisable(gl.GL_BLEND)
 
-    #double click window to run heat transfer for 1000 iter
-    def mouseDoubleClickEvent(self, e):
-        print "dubs"
-        for i in range (1, 1000):
+    #Click window to place permanent heat source
+    def mousePressEvent(self, e):
+        if int(e.buttons()) & QtCore.Qt.LeftButton :
+            print "Started new heat source at:", e.x(), ',', e.y()
+            self.color[int(e.y())/2+int(e.x()/2)*302] = (1, 0, 0, 1)
+            self.initializeGL()
+            self.update_buffer()
+            self.updateGL()
+        elif int(e.buttons()) & QtCore.Qt.RightButton:
+            for i in range(1, 300):
+                self.update_buffer()
+                self.updateGL()
+                cl.enqueue_copy(self.queue, self.color, self.clcolbuf)
+
+    def mouseMoveEvent(self, e):
+        if int(e.buttons()) != QtCore.Qt.NoButton:
+            self.color[int(e.y())/2+int(e.x()/2)*302] = (1, 0, 0, 1)
+            self.initializeGL()
             self.update_buffer()
             self.updateGL()
 
-    #Click window to place permanent heat source
-    def mousePressEvent(self, e):
-        print "Placed new heat source at:", e.x(), ',', e.y()
-        self.color[int(e.y())/2+int(e.x()/2)*302] = (1, 0, 0, 1)
-        self.initializeGL()
-        self.update_buffer()
-        self.updateGL()
 
 
     def resizeGL(self, width, height):
