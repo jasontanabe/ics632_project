@@ -153,12 +153,14 @@ class GLPlotWidget(QGLWidget):
         self.initialize_buffers()
         # set background color
         gl.glClearColor(0,0,0,0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         # update the GL buffer from the CL buffer
         self.update_buffer()
 
     def paintGL(self):
         """Paint the scene.
         """
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         gl.glEnable(gl.GL_POINT_SMOOTH)
         gl.glPointSize(10)
         gl.glEnable(gl.GL_BLEND)
@@ -183,9 +185,21 @@ class GLPlotWidget(QGLWidget):
         gl.glDisableClientState(gl.GL_COLOR_ARRAY)
         gl.glDisable(gl.GL_BLEND)
 
-        #Iterations per draw
-        for i in range(1, 1000):
+    #double click window to run heat transfer for 1000 iter
+    def mouseDoubleClickEvent(self, e):
+        print "dubs"
+        for i in range (1, 1000):
             self.update_buffer()
+            self.updateGL()
+
+    #Click window to place permanent heat source
+    def mousePressEvent(self, e):
+        print "Placed new heat source at:", e.x(), ',', e.y()
+        self.color[int(e.y())/2+int(e.x()/2)*302] = (1, 0, 0, 1)
+        self.initializeGL()
+        self.update_buffer()
+        self.updateGL()
+
 
     def resizeGL(self, width, height):
         """Called upon window resizing: reinitialize the viewport.
@@ -214,13 +228,6 @@ if __name__ == '__main__':
             for i in range (1, 302):
                 for j in range (1, 302):
                     self.data[i*302+j] = ((i-151.0)/151.0,(j-151.0)/151.0)
-            self.color[150+150*302] = (1, 0, 0, 1)
-            self.color[10+20*302] = (1, 0, 0, 1)
-            self.color[10+40*302] = (1, 0, 0, 1)
-            self.color[20+35*302] = (1, 0, 0, 1)
-            self.color[155+200*302] = (1, 0, 0, 1)
-            self.color[135+45*302] = (1, 0, 0, 1)
-            self.color[270+270*302] = (1, 0, 0, 1)
             self.data = np.array(self.data, dtype=np.float32)
             self.color = np.array(self.color, dtype=np.float32)
 
