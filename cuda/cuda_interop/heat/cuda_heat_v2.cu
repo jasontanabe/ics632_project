@@ -91,7 +91,6 @@ __global__ void copy_const(float* output) {
   }
 }
 
-
 __global__ void data_to_color(uchar4* display, float* b) {
   int x = threadIdx.x + blockIdx.x*blockDim.x;
   int y = threadIdx.y + blockIdx.y*blockDim.y;
@@ -107,78 +106,43 @@ __global__ void data_to_color(uchar4* display, float* b) {
   display[offset].w = 255;  
 }
 
-static void draw_func() {
-  glClearColor(0.0, 0.0, 255.0, 1.0);
-  glClear(GL_COLOR_BUFFER_BIT);
-  glDrawPixels(N, N, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-  glutSwapBuffers();
-}
-
-
-static void key_func(unsigned char key, int x, int y) {
-  switch(key) {
-    // esc key
-    case 27:
-      cudaGraphicsUnregisterResource(resource);
-      glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-      glDeleteBuffers(1, &buffer_obj);
-
-      cudaUnbindTexture(texture_a);
-      cudaUnbindTexture(texture_b);
-      cudaFree(dev_a);
-      cudaFree(dev_b);
-      exit(0);
-    case 's':
-      run_anim = true;
-      break;
-  }
-}
-
-
-static void mouse_func(int button, int state, int x, int y) {
-  if (button == GLUT_LEFT_BUTTON) {
-    if (state == GLUT_DOWN) {
-      left_button_down = true;
-    } else {
-      left_button_down = false;
-    }
-  }
-}
 
 bool in_range(int x, int y) {
   return x > 0 && x < N && y > 0 && y < N;
 }
 
-static void mouse_motion_func(int x, int y) {
-  if (left_button_down && in_range(x, y) && !run_anim) {
-    dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
-    dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
+uchar4* get_mapped_ptr() {
     uchar4* dev_ptr;
     size_t size;
     // get the pointer mappped to the cuda resource
     cudaGraphicsMapResources(1, &resource, NULL);
     cudaGraphicsResourceGetMappedPointer((void**)&dev_ptr, &size, resource);
-
-    const_data[(N-y)*N+x] = MAX_TEMP_VALUE;
-
-    cudaMemcpy(dev_const, const_data, N*N*sizeof(float), 
-               cudaMemcpyHostToDevice);
-    data_to_color<<<blocks, threads>>>(dev_ptr, dev_const);
-  }
-  cudaGraphicsUnmapResources(1, &resource, NULL);
-
-  glutPostRedisplay();
+    return dev_ptr;
 }
 
-static void update_data() {
+void clear_data() {
   dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
   dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
-  uchar4* dev_ptr;
-  size_t size;
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; j++) {
+      const_data[j+i*N] = 0;
+    }
+  }
+
+  cudaMemcpy(dev_a, const_data, N*N*sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(dev_const, const_data, N*N*sizeof(float), cudaMemcpyHostToDevice);
+
+  uchar4* dev_ptr = get_mapped_ptr();
+  data_to_color<<<blocks, threads>>>(dev_ptr, dev_const);
+  cudaGraphicsUnmapResources(1, &resource, NULL);
+
+}
+
+void update_data() {
+  dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
+  dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
+  uchar4* dev_ptr = get_mapped_ptr();
   bool a_input = true;
-  // get the pointer mappped to the cuda resource
-  cudaGraphicsMapResources(1, &resource, NULL);
-  cudaGraphicsResourceGetMappedPointer((void**)&dev_ptr, &size, resource);
 
   for (int i = 0; i < ITERATIONS_BEFORE_REFRESH; i++) {
     if (a_input) {
@@ -196,14 +160,73 @@ static void update_data() {
   glutPostRedisplay();
 }
 
+void draw_func() {
+  glClearColor(0.0, 0.0, 0.0, 1.0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  glDrawPixels(N, N, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glutSwapBuffers();
+}
 
-static void idle_func() {
+void key_func(unsigned char key, int x, int y) {
+  switch(key) {
+    // esc key
+    case 27:
+      cudaGraphicsUnregisterResource(resource);
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+      glDeleteBuffers(1, &buffer_obj);
+
+      cudaUnbindTexture(texture_a);
+      cudaUnbindTexture(texture_b);
+      cudaFree(dev_a);
+      cudaFree(dev_b);
+      exit(0);
+    case 's':
+      run_anim = true;
+      break;
+    case 'r':
+      run_anim = false;
+      clear_data();
+      break;
+  }
+}
+
+void mouse_func(int button, int state, int x, int y) {
+  if (button == GLUT_LEFT_BUTTON) {
+    if (state == GLUT_DOWN) {
+      left_button_down = true;
+    } else {
+      left_button_down = false;
+    }
+  }
+}
+
+void mouse_motion_func(int x, int y) {
+  if (left_button_down && in_range(x, y) && !run_anim) {
+    dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
+    dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
+    uchar4* dev_ptr = get_mapped_ptr();
+
+    const_data[(N-y)*N+x] = MAX_TEMP_VALUE;
+
+    cudaMemcpy(dev_const, const_data, N*N*sizeof(float), 
+               cudaMemcpyHostToDevice);
+    data_to_color<<<blocks, threads>>>(dev_ptr, dev_const);
+  }
+  cudaGraphicsUnmapResources(1, &resource, NULL);
+
+  glutPostRedisplay();
+}
+
+void idle_func() {
   if (run_anim) {
     update_data();
   }
 }
 
+
 int main(int argc, char** argv) {
+  dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
+  dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
   cudaDeviceProp prop;
   int dev;
 
@@ -240,16 +263,7 @@ int main(int argc, char** argv) {
   cudaBindTexture(NULL, texture_b, dev_b, N*N*sizeof(float));
   cudaBindTexture(NULL, texture_const, dev_const, N*N*sizeof(float));
 
-  float* tmp = (float*)malloc(N*N*sizeof(float));
-  for (int i = 0; i < N; i++) {
-    for (int j = 0; j < N; j++) {
-      tmp[j+i*N] = 0;
-      const_data[j+i*N] = 0;
-    }
-  }
-
-  cudaMemcpy(dev_a, tmp, N*N*sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(dev_const, tmp, N*N*sizeof(float), cudaMemcpyHostToDevice);
+  clear_data();
 
   glutKeyboardFunc(key_func);
   glutDisplayFunc(draw_func);
