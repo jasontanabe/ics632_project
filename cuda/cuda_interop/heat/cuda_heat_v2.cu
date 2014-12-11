@@ -177,8 +177,10 @@ void key_func(unsigned char key, int x, int y) {
 
       cudaUnbindTexture(texture_a);
       cudaUnbindTexture(texture_b);
+      cudaUnbindTexture(texture_const);
       cudaFree(dev_a);
       cudaFree(dev_b);
+      cudaFree(dev_const);
       exit(0);
     case 's':
       run_anim = true;
@@ -211,10 +213,9 @@ void mouse_motion_func(int x, int y) {
     cudaMemcpy(dev_const, const_data, N*N*sizeof(float), 
                cudaMemcpyHostToDevice);
     data_to_color<<<blocks, threads>>>(dev_ptr, dev_const);
+    cudaGraphicsUnmapResources(1, &resource, NULL);
+    glutPostRedisplay();
   }
-  cudaGraphicsUnmapResources(1, &resource, NULL);
-
-  glutPostRedisplay();
 }
 
 void idle_func() {
