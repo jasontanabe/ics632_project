@@ -23,7 +23,7 @@ __global__ void stencil(float* a, float* b) {
     update += a[y*N+(x+1)];
   }
 
-  b[offset] = update / 4.0 ;
+  b[offset] = update / 4.0;
 }
 
 __global__ void copy(float* to, float* from) {
@@ -43,9 +43,7 @@ int main() {
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
       a[i*N+j] = static_cast<float>(i+j);
-      std::cout << a[i*N+j] << " ";
     }
-    std::cout << std::endl;
   }
 
   cudaMemcpy(dev_a, a, N*N*sizeof(float), cudaMemcpyHostToDevice);
@@ -62,18 +60,18 @@ int main() {
   std::cout << std::endl;
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
-      std::cout << b[i*N+j] << " ";
     }
-    std::cout << std::endl;
   }
   std::cout << std::endl;
 
   // find sum
-  int sum = 0;
+  float sum = 0.0;
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
       sum += b[i*N+j];
+      std::cout << b[i*N+j] << " ";
     }
+    std::cout << std::endl;
   }
   std::cout << "sum is " << sum << std::endl;
   cudaFree(dev_a);

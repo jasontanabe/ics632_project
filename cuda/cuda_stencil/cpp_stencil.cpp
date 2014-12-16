@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#define N 100
+#define N 600
 #define ITERS 5
 
 int main(int argc, char* argv[])
@@ -12,12 +12,12 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < N; i++) {
 		for (int j = 0; j < N; j++) {
 			A.at(i*N+j) = static_cast<float>(i+j);
-			std::cout << A.at(i*N+j) << " ";
+//			std::cout << A.at(i*N+j) << " ";
 		}
 
-		std::cout << std::endl;
+//		std::cout << std::endl;
 	}
-	std::cout << std::endl;
+//	std::cout << std::endl;
 
 	for (int num_it = 0; num_it < ITERS; num_it++) {
 		for (int i = 0; i < N; i++) {
@@ -37,17 +37,17 @@ int main(int argc, char* argv[])
 				}
 
 				B.at(i*N+j) = update/4.0;
-				std::cout << B.at(i*N+j) << " ";
+//				std::cout << B.at(i*N+j) << " ";
 			}
 
-			std::cout << std::endl;
+//			std::cout << std::endl;
 		}
 		
-		std::cout << std::endl;
+//		std::cout << std::endl;
 		A = B;
 	}
 
-  int sum = 0;
+  float sum = 0;
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
       sum += B.at(i*N+j);
