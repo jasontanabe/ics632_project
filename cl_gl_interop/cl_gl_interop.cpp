@@ -183,21 +183,26 @@ int main(int argc, char* argv[])
 	};
 	#endif
 
+	// create shared CL/GL shared context using defined context properties
 	context = clCreateContext(cprops, 1, &deviceID, NULL, NULL, &clerr);
 	queue = clCreateCommandQueue(context, deviceID, NULL, &clerr);
 
+	// load and compile the OpenCL kernel
 	kernelCode = loadSource("stencil_kernel.cl");
 	const char *c_kernelCode = kernelCode.c_str();
 	program = clCreateProgramWithSource(context, 1, &c_kernelCode, NULL, &clerr);
 	clerr = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
 	kernel = clCreateKernel(program, "stencil", &clerr);
 
+	// texture buffer A is an image object created from the previously created GL texture buffer
+	// texture buffer B will be used for intermediate storage between each iteration
 	cl_image_format clf;
 	clf.image_channel_order = CL_RGBA;
 	clf.image_channel_data_type = CL_FLOAT;
 	texBuffA = clCreateFromGLTexture2D(context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, tex, &clerr);
 	texBuffB = clCreateImage2D(context, CL_MEM_READ_WRITE, &clf, N, N, 0, NULL, &clerr);
 
+	// set the texture buffers as arguments to the CL kernel
 	clerr = clSetKernelArg(kernel, 0, sizeof(cl_mem), &texBuffA);
 	clerr = clSetKernelArg(kernel, 1, sizeof(cl_mem), &texBuffB);
 
@@ -206,8 +211,11 @@ int main(int argc, char* argv[])
 	size_t global[2] = { N, N };
 	double curTime = glfwGetTime();
 	double refreshRate = 10.0; // in frames per second
+	// in each iteration, set CL to acquire control of the GL texture buffer, accessed as
+	// the texBuffA object. issue command to execute kernel program to compute data using data
+	// in texture buffer, then copy results from result buffer B back to buffer A.
+	// then release the buffer back to the GL context and draw new texture to screen
 	for (int num_iter = 0; num_iter < iters; num_iter++) {
-		//texBuffA = clCreateFromGLTexture2D(context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, tex, &clerr);
 		clerr = clEnqueueAcquireGLObjects(queue, tex, &texBuffA, 0, NULL, NULL);
 		clerr = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
 		clerr = clEnqueueCopyImage(queue, texBuffB, texBuffA, origin, origin, region, 0, NULL, NULL);
