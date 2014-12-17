@@ -1,0 +1,8 @@
+matmul.c is the matrix multiplication from homework 2 that uses OpenMP
+cuda_matmul.c is the basic matrix multiplication that uses cuda
+cuda_matmul_fast.c is the matrix multiplication that uses shared memory and cuda
+
+to compile:
+gcc matmul.c -Ofast -fopenmp
+nvcc cuda_matmul.cu -O4
+nvcc cuda_matmul.cu -O4

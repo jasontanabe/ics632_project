@@ -1,0 +1,6 @@
+cuda_heat.cu is the first iteration of the interoperability
+cuda_heat_fast.cu is the first iteration of the interoperability that allows for mouse initilization
+
+to compile:
+nvcc cuda_heat.cu -O4 -lGLU -lGLEW -lGL -lglut
+nvcc cuda_heat_fast.cu -O4 -lGLU -lGLEW -lGL -lglut

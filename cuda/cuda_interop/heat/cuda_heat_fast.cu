@@ -13,18 +13,24 @@
 // MAX TEMP VALUE
 #define MAX_TEMP_VALUE 5000
 
+// texture objects
 texture<float> texture_a;
 texture<float> texture_b;
 texture<float> texture_const;
+// handle to OpenGL buffer
 GLuint buffer_obj;
+// cuda reference to OpenGL buffer
 cudaGraphicsResource* resource;
+// device memory
 float* dev_a;
 float* dev_b; 
 float* dev_const;
+// host data
 float* const_data;
 bool run_anim = false;
 bool left_button_down = false;
 
+// stencil using texture a
 __global__ void stencil_a(float* out) {
   int x = threadIdx.x + blockIdx.x*blockDim.x;
   int y = threadIdx.y + blockIdx.y*blockDim.y;
@@ -52,6 +58,7 @@ __global__ void stencil_a(float* out) {
   out[offset] = update / 4.0;
 }
 
+// stencil using texture b
 __global__ void stencil_b(float* out) {
   int x = threadIdx.x + blockIdx.x*blockDim.x;
   int y = threadIdx.y + blockIdx.y*blockDim.y;
@@ -80,6 +87,7 @@ __global__ void stencil_b(float* out) {
 }
 
 
+// copy constant heat sources to buffer
 __global__ void copy_const(float* output) {
   int x = threadIdx.x + blockIdx.x*blockDim.x;
   int y = threadIdx.y + blockIdx.y*blockDim.y;
@@ -91,6 +99,7 @@ __global__ void copy_const(float* output) {
   }
 }
 
+// convert output data to color and store in OpenGL buffer
 __global__ void data_to_color(uchar4* display, float* b) {
   int x = threadIdx.x + blockIdx.x*blockDim.x;
   int y = threadIdx.y + blockIdx.y*blockDim.y;
@@ -100,17 +109,20 @@ __global__ void data_to_color(uchar4* display, float* b) {
   if (out > 255) {
     out = 255;
   }
-  display[offset].x = out;
-  display[offset].y = 0;  
-  display[offset].z = 255 - out;
-  display[offset].w = 255;  
+  // convert to color data
+  display[offset].x = out;        // red
+  display[offset].y = 0;          // green
+  display[offset].z = 255 - out;  // blue 
+  display[offset].w = 255;        
 }
 
 
+// check to see that the x and y values are boundary
 bool in_range(int x, int y) {
   return x > 0 && x < N && y > 0 && y < N;
 }
 
+// get the pointer to the OpenGL buffer
 uchar4* get_mapped_ptr() {
     uchar4* dev_ptr;
     size_t size;
@@ -120,6 +132,7 @@ uchar4* get_mapped_ptr() {
     return dev_ptr;
 }
 
+// reset all the data
 void clear_data() {
   dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
   dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
@@ -138,13 +151,16 @@ void clear_data() {
 
 }
 
+// run the iterations on the array, update color, and flag to draw
 void update_data() {
   dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
   dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
   uchar4* dev_ptr = get_mapped_ptr();
   bool a_input = true;
 
+  // run for certain amount of iterations
   for (int i = 0; i < ITERATIONS_BEFORE_REFRESH; i++) {
+    // which buffer is the input and which is output
     if (a_input) {
       copy_const<<<blocks, threads>>>(dev_a);
       stencil_a<<<blocks, threads>>>(dev_b);
@@ -154,12 +170,14 @@ void update_data() {
     }
     a_input = !a_input;
   }
+  // change data to color
   data_to_color<<<blocks, threads>>>(dev_ptr, dev_b);
   cudaGraphicsUnmapResources(1, &resource, NULL);
 
   glutPostRedisplay();
 }
 
+// draws what's in the OpenGL buffer to the screen
 void draw_func() {
   glClearColor(0.0, 0.0, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -167,6 +185,7 @@ void draw_func() {
   glutSwapBuffers();
 }
 
+// callback to handle all the keyboard functions
 void key_func(unsigned char key, int x, int y) {
   switch(key) {
     // esc key
@@ -192,6 +211,7 @@ void key_func(unsigned char key, int x, int y) {
   }
 }
 
+// callback to handle mouse clicks
 void mouse_func(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON) {
     if (state == GLUT_DOWN) {
@@ -202,6 +222,7 @@ void mouse_func(int button, int state, int x, int y) {
   }
 }
 
+// callback to handle mouse movements
 void mouse_motion_func(int x, int y) {
   if (left_button_down && in_range(x, y) && !run_anim) {
     dim3 blocks(N/BLOCK_SIZE, N/BLOCK_SIZE);
@@ -218,6 +239,7 @@ void mouse_motion_func(int x, int y) {
   }
 }
 
+// callback when application is idle
 void idle_func() {
   if (run_anim) {
     update_data();
@@ -256,16 +278,19 @@ int main(int argc, char** argv) {
 
   const_data = (float*)malloc(N*N*sizeof(float));
 
+  // allocate memory on device
   cudaMalloc((void**)&dev_a, N*N*sizeof(float));
   cudaMalloc((void**)&dev_b, N*N*sizeof(float));
   cudaMalloc((void**)&dev_const, N*N*sizeof(float));
 
+  // bind texture to corresponding memory
   cudaBindTexture(NULL, texture_a, dev_a, N*N*sizeof(float));
   cudaBindTexture(NULL, texture_b, dev_b, N*N*sizeof(float));
   cudaBindTexture(NULL, texture_const, dev_const, N*N*sizeof(float));
 
   clear_data();
 
+  // setup all the callback functions
   glutKeyboardFunc(key_func);
   glutDisplayFunc(draw_func);
   glutIdleFunc(idle_func);

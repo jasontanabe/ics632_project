@@ -23,14 +23,19 @@ __global__ void matmul(int* a, int* b, int* c) {
   int col = threadIdx.x;
 
   int c_val = 0;
+
+  // for all blocks
   for (int i = 0; i < gridDim.x; i++) {
+    // shared memory buffers
     __shared__ int as[BLOCK_SIZE][BLOCK_SIZE];
     __shared__ int bs[BLOCK_SIZE][BLOCK_SIZE];
 
+    // copy data to shared memory buffer
     as[row][col] = a[global_offset(block_row, i, row, col)];
     bs[row][col] = b[global_offset(i, block_col, row, col)];
     __syncthreads();
 
+    // matrix multiplication for block
     for (int j = 0; j < BLOCK_SIZE; j++) {
       c_val += as[row][j] * bs[j][col];
     }
@@ -44,10 +49,12 @@ int main() {
   int a[N*N], b[N*N], c[N*N]; 
   int *dev_a, *dev_b, *dev_c;
 
+  // allocate memory on the device
   cudaMalloc((void**)&dev_a, N*N*sizeof(int));
   cudaMalloc((void**)&dev_b, N*N*sizeof(int));
   cudaMalloc((void**)&dev_c, N*N*sizeof(int));
 
+  // fill arbitrary data into arrays
   srand(5);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
@@ -57,20 +64,24 @@ int main() {
     }
   }
 
+  // copy data from host to device
   cudaMemcpy(dev_a, a, N*N*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(dev_b, b, N*N*sizeof(int), cudaMemcpyHostToDevice);
 
+  // thread and block sizes
   dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
   dim3 blocks((N+BLOCK_SIZE-1)/BLOCK_SIZE, (N+BLOCK_SIZE-1)/BLOCK_SIZE);
 
   gettimeofday(&start, NULL);
 
+  // matrix multiplication kernel
   matmul<<<blocks, threads>>>(dev_a, dev_b, dev_c);
 
   cudaThreadSynchronize();
 
   gettimeofday(&end, NULL);
 
+  // copy data from device to host
   cudaMemcpy(c, dev_c, N*N*sizeof(int), cudaMemcpyDeviceToHost);
 
   // find sum
@@ -86,6 +97,7 @@ int main() {
        start.tv_usec) / 1000000.0);
 
 
+  // free the memory on device
   cudaFree(dev_a);
   cudaFree(dev_b);
   cudaFree(dev_c);

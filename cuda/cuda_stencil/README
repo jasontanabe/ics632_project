@@ -1,0 +1,8 @@
+cpp_stencil.cpp is Darcy's implementation of the heat transfer stencil
+cuda_stencil.cu is the global memory implementation of the heat transfer stencil
+cuda_stencil_fast.cu is the texture memory implementation of the heat transfer stencil
+
+to compile:
+g++ cpp_stencil -Ofast
+nvcc cuda_stencil.cu -O4
+nvcc cuda_stencil_fast.cu -O4
