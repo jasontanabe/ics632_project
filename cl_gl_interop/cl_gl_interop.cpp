@@ -161,8 +161,8 @@ int main(int argc, char* argv[])
 	// get native context handle depending on platform...
 	#ifdef linux
 	cl_context_properties cprops[] = {
-		CL_CONTEXT_PLATFORM, reinterpret_cast<cl_context_properties)(platformID),
-		CL_GL_CONTEXT_KHR, reinterpret_cast<cl_context_properties)(glXGetCurrentContext()),
+		CL_CONTEXT_PLATFORM, reinterpret_cast<cl_context_properties>(platformID),
+		CL_GL_CONTEXT_KHR, reinterpret_cast<cl_context_properties>(glXGetCurrentContext()),
 		CL_GLX_DISPLAY_KHR, reinterpret_cast<cl_context_properties>(glXGetCurrentDisplay()), 
 		0
 	};
